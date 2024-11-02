@@ -1,3 +1,5 @@
+import os
+
 import pyodbc
 import requests
 import json
@@ -24,7 +26,18 @@ def fetch_values(mdb_file_path, table_name, mode="all", num_values=24):
     """
     Fetches values from the .mdb file based on the specified mode.
     """
-    conn_str = f"DRIVER={{Microsoft Access Driver (*.mdb)}};DBQ={mdb_file_path};ExtendedAnsiSQL=1;"
+    # Vérification de l'existence du fichier
+    if not os.path.exists(mdb_file_path):
+        raise FileNotFoundError(f"Le fichier {mdb_file_path} n'existe pas.")
+
+    # Vérification des pilotes disponibles
+    drivers = pyodbc.drivers()
+    if "Microsoft Access Driver (*.mdb)" not in drivers and "Microsoft Access Driver (*.mdb, *.accdb)" not in drivers:
+        raise RuntimeError("Pilote Access non trouvé. Pilotes disponibles : " + str(drivers))
+
+
+
+    conn_str = f"DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={mdb_file_path};"
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
