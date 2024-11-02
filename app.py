@@ -4,6 +4,7 @@ import requests
 import json
 from datetime import datetime, timedelta
 
+print(pyodbc.drivers())
 
 def fetch_jwt_token(login_url, email, password):
     """
@@ -36,7 +37,7 @@ def fetch_values(mdb_file_path, table_name, mode="all", num_values=24):
     :return: DataFrame containing the retrieved values
     """
     # Connection to the .mdb file
-    conn_str = f"DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={mdb_file_path};ExtendedAnsiSQL=1;"
+    conn_str = f"DRIVER={{Microsoft Access Driver (*.mdb)}};DBQ={mdb_file_path};ExtendedAnsiSQL=1;"
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
