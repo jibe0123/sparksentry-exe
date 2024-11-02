@@ -5,6 +5,26 @@ import json
 from datetime import datetime, timedelta
 
 
+def fetch_jwt_token(login_url, email, password):
+    """
+    Fetches a JWT token by logging in with the provided credentials.
+
+    :param login_url: The API endpoint for login
+    :param email: User email
+    :param password: User password
+    :return: JWT token as a string if successful, otherwise None
+    """
+    credentials = {"email": email, "password": password}
+    response = requests.post(login_url, json=credentials)
+
+    if response.status_code == 200:
+        token = response.json().get("data")
+        print("Successfully retrieved JWT token.")
+        return token
+    else:
+        print(f"Failed to retrieve token. Status code: {response.status_code}, Response: {response.text}")
+        return None
+
 def fetch_values(mdb_file_path, table_name, mode="all", num_values=24):
     """
     Fetches values from the .mdb file based on the specified mode.
@@ -59,17 +79,17 @@ def send_data_to_collect_api(data, url, token):
     for _, row in data.iterrows():
         measurements.append({
             "value": row["SampleValue"],
-            "timestamp": pd.to_datetime(row["TimeOfSample"]).isoformat()  # ISO 8601 format
+            "timestamp": pd.to_datetime(row["TimeOfSample"]).strftime("%Y-%m-%dT%H:%M:%SZ")
         })
 
     # Creating the payload
     payload = {
         "measurements": measurements,
-        "name": "Sample Parameter",
-        "hostDevice": 1001,
-        "device": 501,
-        "log": 1.0,
-        "point": "P1",
+        "name": "AN-UAA-1 TEMP RETOUR",
+        "hostDevice": 15,
+        "device": 1601,
+        "log": 75,
+        "point": "AV5",
         "id_equipment": 42
     }
 
@@ -77,6 +97,8 @@ def send_data_to_collect_api(data, url, token):
         "Content-Type": "application/json",
         "Authorization": f"Bearer {token}"
     }
+
+    print("Payload prepared for sending:", json.dumps(payload, indent=2))
 
     # Sending data to the collect API endpoint
     response = requests.post(url, headers=headers, data=json.dumps(payload))
@@ -87,20 +109,35 @@ def send_data_to_collect_api(data, url, token):
         print(f"Failed to send data. Status code: {response.status_code}, Response: {response.text}")
 
 
-# Execution of the function for testing
 if __name__ == "__main__":
-    mdb_file_path = r"C:\Users\Shadow\Desktop\sparksentry-exe\Trendlog_0027400_0000000027-M-2024-03.mdb"
-    table_name = "tblTrendlog_0027400_0000000027"
-    api_url = "https://api.sparksentry.fr/api/v1/collect/1"
-    token = "<your_jwt_token>"
+    mdb_file_path = r"C:\Alerton\Compass\2.0\BAULNE\HABMAISO\trendlogdata\Trendlog_0000015_00000000075.mdb"
+    table_name = "Trendlog_0000015_00000000075"
+    collect_url = "https://api.sparksentry.fr/api/v1/collect/1"
+    login_url = "https://api.sparksentry.fr/api/v1/login"
+
+    # Credentials for login
+    email = "jb@sparksentry.com"
+    password = "root"
+
+    # Retrieve JWT token
+    token = fetch_jwt_token(login_url, email, password)
+    if not token:
+        print("Could not retrieve JWT token, exiting...")
+        exit(1)
 
     # Choose mode: "all" for all values or "last24h" for the last 24 hours
-    mode = "all"  # or "last24h"
+    mode = "all"
 
     try:
         data = fetch_values(mdb_file_path, table_name, mode=mode)
-        print(data)
-        send_data_to_collect_api(data, api_url, token)
+
+        # Check if there is any data to send
+        if not data.empty:
+            print("Data retrieved successfully, preparing to send to API...")
+            print(data)
+            send_data_to_collect_api(data, collect_url, token)
+        else:
+            print("No data found, skipping API call.")
     except Exception as e:
         print("Error during data retrieval or sending:", e)
 
