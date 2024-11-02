@@ -98,7 +98,7 @@ def send_data_to_collect_api(data, url, token):
         print(f"Failed to send data. Status code: {response.status_code}, Response: {response.text}")
 
 if __name__ == "__main__":
-    mdb_file_path = r"C:\Alerton\Compass\2.0\BAULNE\HABMAISO\trendlogdata\Trendlog_0000015_00000000075.mdb"
+    mdb_file_path = r"C:\Alerton\Compass\2.0\BAULNE\HABMAISO\trendlogdata\Trendlog_0000015_0000000075.mdb"
     table_name = "Trendlog_0000015_00000000075"
     collect_url = "https://api.sparksentry.fr/api/v1/collect/1"
     login_url = "https://api.sparksentry.fr/api/v1/login"
