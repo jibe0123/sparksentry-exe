@@ -1,127 +1,141 @@
 import os
-
 import pyodbc
 import requests
 import json
 from datetime import datetime, timedelta
 
-print(pyodbc.drivers())
+# Données des paramètres à traiter
+parameters = [
+    {
+        "id_parameter": 2,
+        "name": "VFD_RETURN_MODULATION",
+        "hostDevice": 2013009,
+        "device": 2013000,
+        "log": 12,
+        "point": "AO-1",
+        "id_equipment": 3,
+        "unit": "%",
+        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\Archive\Trendlog\Data\Trendlog_2013000_0000000012\Trendlog_2013000_0000000012-A-2024.mdb",
+        "table_name": "tblTrendlog_2013000_0000000012"
+    },
+    {
+        "id_parameter": 3,
+        "name": "VFD_SUPPLY_MODULATION",
+        "hostDevice": 2013009,
+        "device": 2013000,
+        "log": 20,
+        "point": "AO-0",
+        "id_equipment": 3,
+        "unit": "%",
+        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\Archive\Trendlog\Data\Trendlog_2013000_0000000020\Trendlog_2013000_0000000020-A-2024.mdb",
+        "table_name": "tblTrendlog_2013000_0000000020"
+    },
+    {
+        "id_parameter": 4,
+        "name": "RETURN_TEMPERATURE",
+        "hostDevice": 2013009,
+        "device": 2013000,
+        "log": 28,
+        "point": "AV-2",
+        "id_equipment": 3,
+        "unit": "°C",
+        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\Archive\Trendlog\Data\Trendlog_2013000_0000000028\Trendlog_2013000_0000000028-A-2024.mdb",
+        "table_name": "tblTrendlog_2013000_0000000028"
+    },
+    {
+        "id_parameter": 5,
+        "name": "SUPPLY_TEMPERATURE_AFTER_REHEAT",
+        "hostDevice": 2013009,
+        "device": 2013000,
+        "log": 26,
+        "point": "AV-3",
+        "id_equipment": 3,
+        "unit": "°C",
+        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\Archive\Trendlog\Data\Trendlog_2013000_0000000026\Trendlog_2013000_0000000026-A-2024.mdb",
+        "table_name": "tblTrendlog_2013000_0000000026"
+    },
+    {
+        "id_parameter": 6,
+        "name": "OUTSIDE_TEMPERATURE",
+        "hostDevice": 2013020,
+        "device": 2013000,
+        "log": 4,
+        "point": "AV-800",
+        "id_equipment": 3,
+        "unit": "°C",
+        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\Archive\Trendlog\Data\Trendlog_2013000_0000000004\Trendlog_2013000_0000000004-A-2024.mdb",
+        "table_name": "tblTrendlog_2013000_0000000004"
+    }
+]
 
 def fetch_jwt_token(login_url, email, password):
-    """
-    Fetches a JWT token by logging in with the provided credentials.
-    """
     credentials = {"email": email, "password": password}
     response = requests.post(login_url, json=credentials)
-
     if response.status_code == 200:
-        token = response.json().get("data")
         print("Successfully retrieved JWT token.")
-        return token
+        return response.json().get("data")
     else:
-        print(f"Failed to retrieve token. Status code: {response.status_code}, Response: {response.text}")
-        return None
+        raise Exception(f"Failed to retrieve token: {response.status_code}, {response.text}")
 
-def fetch_values(mdb_file_path, table_name, mode="all", num_values=24):
-    """
-    Fetches values from the .mdb file based on the specified mode.
-    """
-    # Vérification de l'existence du fichier
+def fetch_values(mdb_file_path, table_name, mode="last24h", num_values=24):
     if not os.path.exists(mdb_file_path):
-        raise FileNotFoundError(f"Le fichier {mdb_file_path} n'existe pas.")
-
-    # Vérification des pilotes disponibles
-    drivers = pyodbc.drivers()
-    if "Microsoft Access Driver (*.mdb)" not in drivers and "Microsoft Access Driver (*.mdb, *.accdb)" not in drivers:
-        raise RuntimeError("Pilote Access non trouvé. Pilotes disponibles : " + str(drivers))
-
-
-
+        raise FileNotFoundError(f"File {mdb_file_path} does not exist.")
     conn_str = f"DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={mdb_file_path};"
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
-    if mode == "all":
-        query = f"SELECT TimeOfSample, SampleValue, ValueType, Sequence, Index FROM {table_name}"
-        cursor.execute(query)
-    elif mode == "last24h":
-        query = f"SELECT TOP {num_values} TimeOfSample, SampleValue, ValueType, Sequence, Index FROM {table_name} WHERE TimeOfSample >= ? ORDER BY TimeOfSample DESC"
+    if mode == "last24h":
+        query = f"SELECT TOP {num_values} TimeOfSample, SampleValue FROM {table_name} WHERE TimeOfSample >= ? ORDER BY TimeOfSample DESC"
         last_24h = datetime.now() - timedelta(hours=24)
         cursor.execute(query, last_24h)
     else:
-        raise ValueError("Invalid mode. Choose 'all' or 'last24h'.")
+        query = f"SELECT TimeOfSample, SampleValue FROM {table_name}"
+        cursor.execute(query)
 
-    rows = cursor.fetchall()
-    data = []
-    for row in rows:
-        data.append({
-            "TimeOfSample": row[0],
-            "SampleValue": row[1],
-            "ValueType": row[2],
-            "Sequence": row[3],
-            "Index": row[4]
-        })
-
+    data = [{"TimeOfSample": row[0], "SampleValue": row[1]} for row in cursor.fetchall()]
     conn.close()
     return data
 
-def send_data_to_collect_api(data, url, token):
-    measurements = []
-    for row in data:
-        measurements.append({
-            "value": row["SampleValue"],
-            "timestamp": row["TimeOfSample"].strftime("%Y-%m-%dT%H:%M:%SZ")
-        })
-
+def send_data_to_collect_api(data, url, token, params):
+    measurements = [
+        {"value": row["SampleValue"], "timestamp": row["TimeOfSample"].strftime("%Y-%m-%dT%H:%M:%SZ")}
+        for row in data
+    ]
     payload = {
         "measurements": measurements,
-        "name": "AN-UAA-1 TEMP RETOUR",
-        "hostDevice": 15,
-        "device": 1601,
-        "log": 75,
-        "point": "AV5",
-        "id_equipment": 42
+        "name": params["name"],
+        "hostDevice": params["hostDevice"],
+        "device": params["device"],
+        "log": params.get("log", 0.0),
+        "point": params.get("point", ""),
+        "id_equipment": params["id_equipment"],
+        "id_parameter": params["id_parameter"],
+        "measurement": params["name"]
     }
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {token}"
-    }
-
-    print("Payload prepared for sending:", json.dumps(payload, indent=2))
-
-    response = requests.post(url, headers=headers, data=json.dumps(payload))
-
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+    response = requests.post(url, headers=headers, json=payload)
     if response.status_code == 201:
-        print("Data sent successfully.")
+        print(f"Data for {params['name']} sent successfully.")
     else:
-        print(f"Failed to send data. Status code: {response.status_code}, Response: {response.text}")
+        print(f"Failed to send data for {params['name']}. Status code: {response.status_code}")
 
 if __name__ == "__main__":
-    mdb_file_path = r"C:\Alerton\Compass\2.0\BAULNE\HABMAISO\trendlogdata\Trendlog_0000015_0000000075.mdb"
-    table_name = "tblTrendlog_0000015_0000000075"
-    collect_url = "https://api.sparksentry.fr/api/v1/collect/1"
+    collect_url = "https://api.sparksentry.fr/api/v1/collect"
     login_url = "https://api.sparksentry.fr/api/v1/login"
-
     email = "jb@sparksentry.com"
     password = "root"
 
-    token = fetch_jwt_token(login_url, email, password)
-    if not token:
-        print("Could not retrieve JWT token, exiting...")
-        exit(1)
-
-    mode = "all"
-
     try:
-        data = fetch_values(mdb_file_path, table_name, mode=mode)
-        if data:
-            print("Data retrieved successfully, preparing to send to API...")
-            print(data)
-            send_data_to_collect_api(data, collect_url, token)
-        else:
-            print("No data found, skipping API call.")
+        token = fetch_jwt_token(login_url, email, password)
+        for param in parameters:
+            print(f"Processing: {param['name']}")
+            data = fetch_values(param["mdb_path"], param["table_name"], mode="last24h")
+            if data:
+                print(f"Retrieved {len(data)} records for {param['name']}. Sending to API...")
+                send_data_to_collect_api(data, collect_url, token, param)
+            else:
+                print(f"No data found for {param['name']}.")
     except Exception as e:
-        print("Error during data retrieval or sending:", e)
+        print(f"An error occurred: {e}")
 
     input("Press Enter to close the program...")
