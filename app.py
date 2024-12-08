@@ -17,7 +17,7 @@ parameters = [
         "point": "AO-1",
         "id_equipment": 3,
         "unit": "%",
-        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\Archive\Trendlog\Data\Trendlog_2013000_0000000012\Trendlog_2013000_0000000012-A-2024.mdb",
+        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\TrendlogData\Trendlog_2013000_0000000012.mdb",
         "table_name": "tblTrendlog_2013000_0000000012"
     },
     {
@@ -29,7 +29,7 @@ parameters = [
         "point": "AO-0",
         "id_equipment": 3,
         "unit": "%",
-        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\Archive\Trendlog\Data\Trendlog_2013000_0000000020\Trendlog_2013000_0000000020-A-2024.mdb",
+        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\TrendlogData\Trendlog_2013000_0000000020.mdb",
         "table_name": "tblTrendlog_2013000_0000000020"
     },
     {
@@ -41,7 +41,7 @@ parameters = [
         "point": "AV-2",
         "id_equipment": 3,
         "unit": "°C",
-        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\Archive\Trendlog\Data\Trendlog_2013000_0000000028\Trendlog_2013000_0000000028-A-2024.mdb",
+        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\TrendlogData\Trendlog_2013000_0000000028.mdb",
         "table_name": "tblTrendlog_2013000_0000000028"
     },
     {
@@ -53,7 +53,7 @@ parameters = [
         "point": "AV-3",
         "id_equipment": 3,
         "unit": "°C",
-        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\Archive\Trendlog\Data\Trendlog_2013000_0000000026\Trendlog_2013000_0000000026-A-2024.mdb",
+        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\TrendlogData\Trendlog_2013000_0000000026.mdb",
         "table_name": "tblTrendlog_2013000_0000000026"
     },
     {
@@ -65,7 +65,7 @@ parameters = [
         "point": "AV-800",
         "id_equipment": 3,
         "unit": "°C",
-        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\Archive\Trendlog\Data\Trendlog_2013000_0000000004\Trendlog_2013000_0000000004-A-2024.mdb",
+        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\TrendlogData\Trendlog_2013000_0000000004-2024.mdb",
         "table_name": "tblTrendlog_2013000_0000000004"
     }
 ]
