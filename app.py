@@ -1,9 +1,7 @@
 import os
-from traceback import print_tb
 
 import pyodbc
 import requests
-import json
 from datetime import datetime, timedelta
 
 # Données des paramètres à traiter
@@ -65,7 +63,7 @@ parameters = [
         "point": "AV-800",
         "id_equipment": 3,
         "unit": "°C",
-        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\TrendlogData\Trendlog_2013000_0000000004-2024.mdb",
+        "mdb_path": r"C:\Alerton\Compass\2.0\BAULNE\HILLPARK\TrendlogData\Trendlog_2013000_0000000004.mdb",
         "table_name": "tblTrendlog_2013000_0000000004"
     }
 ]
@@ -86,21 +84,18 @@ def fetch_values(mdb_file_path, table_name, mode="last24h", num_values=24):
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
-    print('conn_str', conn_str)
-
     if mode == "last24h":
         query = f"SELECT TOP {num_values} TimeOfSample, SampleValue FROM {table_name} WHERE TimeOfSample >= ? ORDER BY TimeOfSample DESC"
         last_24h = datetime.now() - timedelta(hours=24)
-        print('query', query)
         cursor.execute(query, last_24h)
     else:
         query = f"SELECT TimeOfSample, SampleValue FROM {table_name}"
         cursor.execute(query)
 
-    print('result:', cursor.fetchall())
-    data = [{"TimeOfSample": row[0], "SampleValue": row[1]} for row in cursor.fetchall()]
+    result_data = [{"TimeOfSample": row[0], "SampleValue": row[1]} for row in cursor.fetchall()]
+    print('data:', result_data)
     conn.close()
-    return data
+    return result_data
 
 def send_data_to_collect_api(data, url, token, params):
     measurements = [
@@ -136,6 +131,7 @@ if __name__ == "__main__":
         for param in parameters:
             print(f"Processing: {param['name']}")
             data = fetch_values(param["mdb_path"], param["table_name"], mode="last24h")
+            print('il y a de la data', data)
             if data:
                 print(f"Retrieved {len(data)} records for {param['name']}. Sending to API...")
                 send_data_to_collect_api(data, collect_url, token, param)
