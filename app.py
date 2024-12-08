@@ -92,7 +92,6 @@ def fetch_values(mdb_file_path, table_name, mode="last48h"):
         cursor.execute(query)
 
     result_data = [{"TimeOfSample": row[0], "SampleValue": row[1]} for row in cursor.fetchall()]
-    print('data:', result_data)
     conn.close()
     return result_data
 
@@ -137,5 +136,3 @@ if __name__ == "__main__":
                 print(f"No data found for {param['name']}.")
     except Exception as e:
         print(f"An error occurred: {e}")
-
-    input("Press Enter to close the program...")
