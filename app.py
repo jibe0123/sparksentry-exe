@@ -1,4 +1,6 @@
 import os
+from traceback import print_tb
+
 import pyodbc
 import requests
 import json
@@ -84,14 +86,18 @@ def fetch_values(mdb_file_path, table_name, mode="last24h", num_values=24):
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
+    print('conn_str', conn_str)
+
     if mode == "last24h":
         query = f"SELECT TOP {num_values} TimeOfSample, SampleValue FROM {table_name} WHERE TimeOfSample >= ? ORDER BY TimeOfSample DESC"
         last_24h = datetime.now() - timedelta(hours=24)
+        print('query', query)
         cursor.execute(query, last_24h)
     else:
         query = f"SELECT TimeOfSample, SampleValue FROM {table_name}"
         cursor.execute(query)
 
+    print('result:', cursor.fetchall())
     data = [{"TimeOfSample": row[0], "SampleValue": row[1]} for row in cursor.fetchall()]
     conn.close()
     return data
