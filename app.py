@@ -4,7 +4,6 @@ import pyodbc
 import requests
 from datetime import datetime, timedelta
 
-# Données des paramètres à traiter
 parameters = [
     {
         "id_parameter": 2,
@@ -84,9 +83,9 @@ def fetch_values(mdb_file_path, table_name, mode="last24h", num_values=24):
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
-    if mode == "last24h":
-        query = f"SELECT TOP {num_values} TimeOfSample, SampleValue FROM {table_name} WHERE TimeOfSample >= ? ORDER BY TimeOfSample DESC"
-        last_24h = datetime.now() - timedelta(hours=24)
+    if mode == "last48h":
+        query = f"SELECT TimeOfSample, SampleValue FROM {table_name} WHERE TimeOfSample >= ? ORDER BY TimeOfSample DESC"
+        last_24h = datetime.now() - timedelta(hours=48)
         cursor.execute(query, last_24h)
     else:
         query = f"SELECT TimeOfSample, SampleValue FROM {table_name}"
@@ -115,7 +114,7 @@ def send_data_to_collect_api(data, url, token, params):
     }
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
     response = requests.post(url, headers=headers, json=payload)
-    if response.status_code == 201:
+    if response.status_code == 200:
         print(f"Data for {params['name']} sent successfully.")
     else:
         print(f"Failed to send data for {params['name']}. Status code: {response.status_code}")
@@ -130,8 +129,7 @@ if __name__ == "__main__":
         token = fetch_jwt_token(login_url, email, password)
         for param in parameters:
             print(f"Processing: {param['name']}")
-            data = fetch_values(param["mdb_path"], param["table_name"], mode="last24h")
-            print('il y a de la data', data)
+            data = fetch_values(param["mdb_path"], param["table_name"], mode="last48h")
             if data:
                 print(f"Retrieved {len(data)} records for {param['name']}. Sending to API...")
                 send_data_to_collect_api(data, collect_url, token, param)
