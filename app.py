@@ -76,7 +76,7 @@ def fetch_jwt_token(login_url, email, password):
     else:
         raise Exception(f"Failed to retrieve token: {response.status_code}, {response.text}")
 
-def fetch_values(mdb_file_path, table_name, mode="last24h", num_values=24):
+def fetch_values(mdb_file_path, table_name, mode="last48h"):
     if not os.path.exists(mdb_file_path):
         raise FileNotFoundError(f"File {mdb_file_path} does not exist.")
     conn_str = f"DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={mdb_file_path};"
@@ -85,8 +85,8 @@ def fetch_values(mdb_file_path, table_name, mode="last24h", num_values=24):
 
     if mode == "last48h":
         query = f"SELECT TimeOfSample, SampleValue FROM {table_name} WHERE TimeOfSample >= ? ORDER BY TimeOfSample DESC"
-        last_24h = datetime.now() - timedelta(hours=48)
-        cursor.execute(query, last_24h)
+        last_48h = datetime.now() - timedelta(hours=48)
+        cursor.execute(query, last_48h)
     else:
         query = f"SELECT TimeOfSample, SampleValue FROM {table_name}"
         cursor.execute(query)
